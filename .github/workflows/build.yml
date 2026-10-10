@@ -1,0 +1,69 @@
+# Build AOSP Winscope without a full AOSP checkout.
+# Manual: Actions -> Build Winscope -> Run workflow (choose the AOSP branch/tag).
+name: Build Winscope
+
+on:
+  workflow_dispatch:
+    inputs:
+      aosp_ref:
+        description: 'AOSP branch or tag for all repos (e.g. main, android-16.0.0_r1)'
+        default: main
+        required: true
+  push:
+    branches: [main]
+    paths: ['scripts/**', '.github/workflows/build.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: winscope-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      AOSP_REF: ${{ inputs.aosp_ref || 'main' }}
+      AOSP_TOP: ${{ github.workspace }}/aosp
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Fetch AOSP sources (sparse)
+        run: scripts/fetch_sources.sh "$AOSP_REF" "$AOSP_TOP"
+
+      # Perfetto's build deps (emsdk, gn, ninja, node...) are large; cache them per perfetto revision
+      - name: Perfetto revision
+        id: pf
+        run: echo "sha=$(git -C "$AOSP_TOP/external/perfetto" rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Perfetto build deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            aosp/external/perfetto/buildtools
+            ~/.npm
+          key: perfetto-deps-${{ steps.pf.outputs.sha }}
+          restore-keys: perfetto-deps-
+
+      - name: Build Winscope
+        run: scripts/build_winscope.sh "$AOSP_TOP"
+
+      - name: Package
+        id: pkg
+        run: |
+          ref="${AOSP_REF//\//-}"
+          name="winscope-${ref}-$(date -u +%Y%m%d)"
+          cp "$AOSP_TOP/SOURCES.txt" "$AOSP_TOP/development/tools/winscope/dist/prod/"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.pkg.outputs.name }}
+          path: aosp/development/tools/winscope/dist/prod/
+          if-no-files-found: error
