@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
     inputs:
       aosp_ref:
-        description: 'AOSP branch or tag for all repos (e.g. main, android-16.0.0_r1)'
-        default: main
+        description: 'AOSP branch or tag for all repos (e.g. android17-release, android-16.0.0_r4, main)'
+        default: android17-release
         required: true
   push:
     branches: [main]
@@ -25,14 +25,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     env:
-      AOSP_REF: ${{ inputs.aosp_ref || 'main' }}
+      AOSP_REF: ${{ inputs.aosp_ref || 'android17-release' }}
       AOSP_TOP: ${{ github.workspace }}/aosp
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Fetch AOSP sources (sparse)
         run: scripts/fetch_sources.sh "$AOSP_REF" "$AOSP_TOP"
