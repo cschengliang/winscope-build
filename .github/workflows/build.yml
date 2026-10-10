@@ -48,8 +48,8 @@ jobs:
           path: |
             aosp/external/perfetto/buildtools
             ~/.npm
-          key: perfetto-deps-${{ steps.pf.outputs.sha }}
-          restore-keys: perfetto-deps-
+          key: perfetto-deps-${{ env.AOSP_REF }}-${{ steps.pf.outputs.sha }}
+          restore-keys: perfetto-deps-${{ env.AOSP_REF }}-
 
       - name: Build Winscope
         run: scripts/build_winscope.sh "$AOSP_TOP"

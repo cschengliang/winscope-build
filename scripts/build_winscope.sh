@@ -37,6 +37,9 @@ fi
 
 # 2. Perfetto build deps (clang, gn, ninja, node, emsdk...) without the test-data sync.
 step "Perfetto build deps"
+# buildtools/ mixes tracked files (BUILD.gn...) with downloaded deps; a restored CI cache
+# from another Perfetto revision may carry stale tracked files, so reset them first.
+git -C "$PERFETTO" checkout -- buildtools
 python3 "$HERE/install_perfetto_deps.py" "$PERFETTO"
 end
 
