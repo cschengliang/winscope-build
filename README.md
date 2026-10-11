@@ -29,7 +29,27 @@ Winscope 按 AOSP 目录结构用相对路径引用其他仓库，`scripts/fetch
 
 ## 运行
 
-产物是静态网页，不能直接双击 `index.html` 打开（浏览器不允许从 `file://` 加载 wasm）。
+产物是静态网页，不能直接双击 `index.html` 打开（浏览器不允许从 `file://` 加载 wasm），需要先起一个本地服务：
 
-- **Windows**：解压后双击产物里的 `run_winscope.bat`（需要 Python 3），它会起本地服务并打开浏览器；`adb` 在 PATH 里时还会另开窗口运行 `winscope_proxy.py`，把它打印的 token 填到网页的 Collect Traces 里即可直接从设备抓 trace。
-- **其他系统**：`python3 -m http.server -d dist/prod 8080`，再访问 http://localhost:8080 ；抓 trace 另外运行 `python3 winscope_proxy.py`。
+- **Windows**：解压 [Releases](https://github.com/cschengliang/winscope-build/releases) 里的 zip，双击 `run_winscope.bat`（需要 Python 3）。它会在 8080 端口起本地服务并用浏览器打开 Winscope（换端口：`run_winscope.bat 9000`）。
+- **其他系统**：在解压目录里运行 `python3 -m http.server 8080`，再访问 http://localhost:8080 。
+
+## 使用教程：用 Web Device Proxy 连接设备抓 trace
+
+Web Device Proxy（WDP）是 Google 提供的本地小程序，Winscope 网页通过它（`ws://localhost:9167`）调用电脑上的 adb 和设备通信，是 Winscope 首页推荐的连接方式。
+
+1. **准备设备**：手机打开 USB 调试并连上电脑（或启动模拟器），确认 `adb devices` 能看到它、状态是 `device`。
+2. **安装 WDP**：从 [Android Web Device Proxy 下载页](https://tools.google.com/dlpage/android_web_device_proxy) 下载安装并保持运行。
+3. **打开 Winscope**：用 Chrome 或 Edge 打开上面起好的本地页面，左侧 **Collect Traces** 选 **Web Device Proxy (Recommended)** 标签页。如果提示 "Web Device Proxy doesn't seem to be running"，确认 WDP 已启动后点 **Retry**。
+4. **授权**：第一次连接时 WDP 会弹窗请求允许当前网址（`http://127.0.0.1:8080`）访问，设备也可能需要单独授权。请允许浏览器弹窗并在弹出页里批准，然后点 **Retry**。换了端口或网址需要重新授权。
+5. **选设备**：连上后会显示设备名（例如 `Android SDK_Tablet_for_x86_64 (emulator-5554)`），多台设备时用 **Change device** 切换。
+6. **抓 trace**：在 **Trace** 页勾选要抓的目标（IME、Input、Surface Flinger、Transactions、Window Manager、Screen Recording 等，带齿轮图标的可以点开调整配置），点 **Start trace**，在设备上复现问题后点 **End trace**。Winscope 会自动把 trace 拉回来并打开。只想看某一时刻的状态，就用 **Dump** 页的 **Dump state**。
+7. **之后再看**：**Fetch traces from last session** 可以重新拉取上一次的 trace；也可以把已有的 trace 文件、zip 或 bugreport 直接拖进右侧 **Upload Traces**。
+
+![Collect Traces：通过 Web Device Proxy 连接模拟器并选择 trace 目标](docs/images/collect-traces-wdp.png)
+
+抓完后进入查看界面：顶部切换 Surface Flinger、Window Manager、Input、IME、Transactions 等视图，左侧是图层的 3D 示意，中间是层级树，右侧是选中图层的属性和 proto 原始数据，底部时间轴可以逐帧拖动，并和屏幕录像同步。
+
+![查看 Surface Flinger trace：图层 3D 视图、层级树、属性面板和时间轴](docs/images/surfaceflinger-viewer.png)
+
+> 另一个标签页 **Winscope Proxy** 是旧的连接方式：先运行产物里的 `python winscope_proxy.py`（`run_winscope.bat` 检测到 adb 时会自动另开窗口启动它，监听 5544 端口），再把它打印的 token 填进网页。用 WDP 时可以不管它。
