@@ -1,5 +1,7 @@
 # winscope-build
 
+**简体中文** | [English](README.en.md)
+
 用 GitHub Actions 编译 AOSP 的 [Winscope](https://android.googlesource.com/platform/development/+/refs/heads/main/tools/winscope/)（WindowManager / SurfaceFlinger / Transitions / ProtoLog / IME / ViewCapture 等 trace 查看工具），不需要 `repo sync` 整个 AOSP。
 
 ## 依赖的仓库
@@ -14,7 +16,7 @@ Winscope 按 AOSP 目录结构用相对路径引用其他仓库，`scripts/fetch
 | `frameworks/proto_logging/stats/enums` | `platform/frameworks/proto_logging` | view 相关 proto 引用的枚举 |
 | `external/perfetto`（完整） | `platform/external/perfetto` | SurfaceFlinger/transactions/ProtoLog/input/transition proto，以及 trace processor（wasm）和它生成的 TS proto |
 
-`google/protobuf/descriptor.proto` 由 protobufjs 自带。所有仓库使用同一个分支或标签（`AOSP_REF`），否则 proto 可能对不上。
+`frameworks/*` 这几个仓库只有 Android 16 及以前需要；Android 17 起 Winscope 的 trace proto 全部来自 `external/perfetto`，脚本会自动判断。`google/protobuf/descriptor.proto` 由 protobufjs 自带。所有仓库使用同一个分支或标签（`AOSP_REF`），否则 proto 可能对不上。
 
 ## 使用
 
