@@ -18,7 +18,7 @@ Winscope 按 AOSP 目录结构用相对路径引用其他仓库，`scripts/fetch
 
 ## 使用
 
-- **GitHub Actions**：分支名就是要编的 AOSP 标签，例如 `android-16.0.0_r4`、`android-17.0.0_r1`，推送或在该分支上 Run workflow 即编译对应标签；`main` 默认编 `android17-release`，也可在 Run workflow 里手动填分支或标签。产物在运行页面的 Artifacts 里，附带 `SOURCES.txt` 记录各仓库的提交。
+- **GitHub Actions**：分支名就是要编的 AOSP 标签，例如 `android-16.0.0_r4`、`android-17.0.0_r1`，推送或在该分支上 Run workflow 即编译对应标签；`main` 默认编 `android17-release`，也可在 Run workflow 里手动填分支或标签。产物在运行页面的 Artifacts 里，附带 `SOURCES.txt` 记录各仓库的提交。`android-*` 分支编译成功后还会自动发布或更新 [Release](https://github.com/cschengliang/winscope-build/releases) `winscope-<分支名>`，附带可直接解压运行的 zip。
 - **本地（Linux / WSL）**：
   ```bash
   scripts/fetch_sources.sh android17-release ./aosp

@@ -15,7 +15,7 @@ on:
     paths: ['scripts/**', '.github/workflows/build.yml', '.gitattributes']
 
 permissions:
-  contents: read
+  contents: write   # publish Releases from android-* branches
 
 concurrency:
   group: winscope-${{ github.ref }}
@@ -62,6 +62,37 @@ jobs:
           name="winscope-${ref}-$(date -u +%Y%m%d)"
           cp "$AOSP_TOP/SOURCES.txt" scripts/run_winscope.bat "$AOSP_TOP/development/tools/winscope/dist/prod/"
           echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      # android-* branches: publish/refresh Release "winscope-<branch>" with a ready-to-run zip
+      - name: Publish Release
+        if: startsWith(github.ref_name, 'android-')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="winscope-${GITHUB_REF_NAME}"
+          dir="winscope-${GITHUB_REF_NAME}"
+          zip="$RUNNER_TEMP/$dir.zip"
+          cp -a "$AOSP_TOP/development/tools/winscope/dist/prod" "$RUNNER_TEMP/$dir"
+          (cd "$RUNNER_TEMP" && zip -qr "$zip" "$dir")
+          {
+            echo "Winscope built from AOSP \`${GITHUB_REF_NAME}\` ($(date -u +%Y-%m-%d), [build log]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID))."
+            echo
+            echo "**Windows**: unzip and double-click \`run_winscope.bat\` (needs Python 3). It opens Winscope in the browser; with \`adb\` on PATH it also starts \`winscope_proxy.py\` for capturing traces from a device."
+            echo
+            echo "**Other OS**: \`python3 -m http.server 8080\` in the unzipped folder, then open http://localhost:8080 ."
+            echo
+            echo "Sources:"
+            echo '```'
+            cat "$AOSP_TOP/SOURCES.txt"
+            echo '```'
+          } > "$RUNNER_TEMP/notes.md"
+          if gh release view "$tag" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$tag" "$zip" --clobber -R "$GITHUB_REPOSITORY"
+            gh release edit "$tag" --notes-file "$RUNNER_TEMP/notes.md" -R "$GITHUB_REPOSITORY"
+          else
+            gh release create "$tag" "$zip" --target "$GITHUB_SHA" --title "Winscope ${GITHUB_REF_NAME}" \
+              --notes-file "$RUNNER_TEMP/notes.md" -R "$GITHUB_REPOSITORY"
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
