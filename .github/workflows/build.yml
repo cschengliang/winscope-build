@@ -1,16 +1,17 @@
 # Build AOSP Winscope without a full AOSP checkout.
-# Manual: Actions -> Build Winscope -> Run workflow (choose the AOSP branch/tag).
+# Manual: Actions -> Build Winscope -> Run workflow. Branches named after an AOSP tag
+# (e.g. android-16.0.0_r4) build that tag; main builds android17-release.
 name: Build Winscope
 
 on:
   workflow_dispatch:
     inputs:
       aosp_ref:
-        description: 'AOSP branch or tag for all repos (e.g. android17-release, android-16.0.0_r4, main)'
-        default: android17-release
-        required: true
+        description: 'AOSP branch or tag (empty = this branch''s name if it is android-*, else android17-release)'
+        default: ''
+        required: false
   push:
-    branches: [main]
+    branches: [main, 'android-*']
     paths: ['scripts/**', '.github/workflows/build.yml']
 
 permissions:
@@ -25,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     env:
-      AOSP_REF: ${{ inputs.aosp_ref || 'android17-release' }}
+      AOSP_REF: ${{ inputs.aosp_ref || (startsWith(github.ref_name, 'android-') && github.ref_name) || 'android17-release' }}
       AOSP_TOP: ${{ github.workspace }}/aosp
     steps:
       - uses: actions/checkout@v4
