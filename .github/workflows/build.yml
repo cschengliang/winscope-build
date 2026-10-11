@@ -60,7 +60,7 @@ jobs:
         run: |
           ref="${AOSP_REF//\//-}"
           name="winscope-${ref}-$(date -u +%Y%m%d)"
-          cp "$AOSP_TOP/SOURCES.txt" "$AOSP_TOP/development/tools/winscope/dist/prod/"
+          cp "$AOSP_TOP/SOURCES.txt" scripts/run_winscope.bat "$AOSP_TOP/development/tools/winscope/dist/prod/"
           echo "name=$name" >> "$GITHUB_OUTPUT"
 
       - uses: actions/upload-artifact@v4
